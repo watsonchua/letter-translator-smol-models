@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import List
 from jigsawstack import JigsawStack, JigsawStackError
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -28,14 +29,6 @@ def upload_to_s3(file_data, object_name):
 
     print(file_data)
     try:
-        # if isinstance(file_data, str):
-        #     file_data = file_data.encode('utf-8')  # Encode string to bytes
-        # elif not isinstance(file_data, bytes):
-        #     raise ValueError("file_data must be either a string or bytes")
-
-        # s3_client.upload_fileobj(BytesIO(file_data), s3_bucket_name, object_name)
-
-
         s3_client.upload_fileobj(file_data, s3_bucket_name, object_name)
 
 
@@ -51,43 +44,27 @@ def upload_to_s3(file_data, object_name):
 
 
 class OCR:
-    def __init__(self):
+    def __init__(self, prompts: List[str]):
         self.client = JigsawStack(api_key=os.environ["JIGSAWSTACK_API_KEY"])
+        self.prompts = prompts
     
-    # def upload_file(self, image_file, filename):
-    #     print(image_file)
-    #     # image_data = image_file.read()
-    #     # result = self.client.store.upload(
-    #     #     image_file, {"filename": filename, "overwrite": True}
-    #     # )
-    #     # print("Image uploaded successfully:", result)
-        
-    #     result = upload_to_s3(image_file, filename)
-    #     print("Image uploaded successfully:", result)
-
-        
-
-
 
     def parse(self, image_file, filename):
 
         try:
-            # upload_results = self.upload_file(image_file, filename)
             uploaded_url = upload_to_s3(image_file, filename)
-            # uploaded_url = upload_results["url"]
-            # uploaded_url = image_file.file_path
 
             print(f"Image uploaded to {uploaded_url}")
-            result = self.client.vision.vocr({"url": uploaded_url, "prompt" : ["Extract the list of ingredients and allergens from the image"]})        
-            result_text = result['context']
-            print(result_text)
+            print(self.prompts)
+            result = self.client.vision.vocr({"url": uploaded_url, "prompts" : self.prompts})      
+            result_context = result["context"]  
+            # print(result_context)
         except KeyError as e:
             print(e)
-            result_text = None
+            result_context = None
         except JigsawStackError as e:
             print(f"An error occurred during uploading: {e}")
-            result_text = None
+            result_context = None
 
-        
-        return result_text
+        return result_context
         
