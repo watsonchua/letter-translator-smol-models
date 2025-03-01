@@ -1,2 +1,6 @@
 jigsawstack
 python-dotenv
+python-telegram-bot
+groq
+tenacity
+boto3
