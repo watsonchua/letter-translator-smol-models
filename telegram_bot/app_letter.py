@@ -10,6 +10,30 @@ import requests
 from services.letter_action_identifier import extract_content, identify_letter_action, respond_to_query
 from telegram.constants import ParseMode
 from services.transcribe import transcribe_audio
+import pyttsx3
+from pyttsx3.voice import Voice
+
+import tempfile
+from gtts import gTTS
+
+tts_engine = pyttsx3.init()
+
+
+def get_chinese_voice(engine: pyttsx3.engine.Engine) -> Voice:
+    voices = engine.getProperty("voices")
+    for voice in voices:
+        if voice.languages and voice.languages[0] == "zh":
+            return voice
+        if "Chinese" in voice.name or "Mandarin" in voice.name.title():
+            return voice
+
+    print(voice.id)
+    raise RuntimeError(f"No Chinese voice found among {voices}")
+
+chinese_voice = get_chinese_voice(tts_engine)
+tts_engine.setProperty("voice", chinese_voice.id)
+
+
 
 load_dotenv()
 # Constants for the conversation states
@@ -46,6 +70,7 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Goodbye!")
+
 
 
 # async def save_allergens(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -134,7 +159,7 @@ if __name__ == '__main__':
         # Acknowledge receipt of voice message
         await context.bot.send_message(
             chat_id=user_id, 
-            text="I received your voice message. Processing it now..."
+            text="Processing ....."
         )
         
         try:
@@ -155,7 +180,48 @@ if __name__ == '__main__':
                 text=query_answer,
                 parse_mode=ParseMode.MARKDOWN
             )
+
+            # Create a gTTS object with Chinese language
+            tts = gTTS(text=query_answer, lang='zh-cn')
+
+            # Save the audio file
+            output_file = "/home/watsonchua/work/temp/chinese_speech.mp3"
+            tts.save(output_file)
+
+            print(f"Audio saved as {output_file}")
+            # Create a temporary file to store the audio
+            # with tempfile.NamedTemporaryFile(suffix='.mp3', delete=True) as temp_file:
+            #     temp_filename = temp_file.name
             
+            # # Get available voices
+            # voices = tts_engine.getProperty('voices')
+            
+            # # Set Chinese voice if available
+            # chinese_voice = None
+            # for voice in voices:
+            #     # Look for Chinese language voices (zh_CN, zh_TW, etc)
+            #     if voice.languages and any(lang.startswith('zh') for lang in voice.languages):
+            #         chinese_voice = voice.id
+            #         break
+            
+            # # Set the voice (use Chinese if found, otherwise default)
+            # tts_engine.setProperty('voice', chinese_voice if chinese_voice else voices[0].id)
+            
+            # Use Google Text-to-Speech to convert text to speech
+            
+            # Create a Chinese voice audio
+            # tts = gTTS(text=query_answer, lang='zh-cn', slow=False)
+            
+            # # Save audio to the temporary file
+            # tts.save(temp_filename)
+            
+            # Send the voice message from the temporary file
+            with open(output_file, 'rb') as audio_file:
+                await context.bot.send_voice(chat_id=user_id, voice=audio_file)
+            
+        # # Clean up the temporary file
+        # os.unlink(temp_filename)
+
         except Exception as e:
             logging.error(f"Error processing voice message: {str(e)}")
             await context.bot.send_message(
