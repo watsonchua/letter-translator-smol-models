@@ -5,7 +5,6 @@ from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, ConversationHandler
 from dotenv import load_dotenv
 from io import BytesIO
-import requests
 from services.allergen_identifier import identify_allergens
 
 load_dotenv()
@@ -13,8 +12,7 @@ load_dotenv()
 # Constants for the conversation states
 ALLERGENS = 0
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-GENERATE_URL = os.getenv('GENERATE_URL')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN_ALLERGEN')
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -33,9 +31,6 @@ Use the following commands if needed:
 /clear: Clear the chat history and continue the conversation
 /stop: End the conversation 
 """
-
-
-
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -69,24 +64,6 @@ async def save_allergens(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"Your allergens have been saved: {', '.join(allergen_list)}\nYou can update them anytime with /allergens."
     )
     return ConversationHandler.END
-
-async def talk_to_llm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_chat.id
-    history = user_sessions[user_id]
-    user_msg = update.message.text
-    
-    # Check if user has registered allergens
-    if user_id in user_allergens:
-        # Include the allergens in the system message or processing
-        allergens = user_allergens[user_id]
-        # Here you would integrate allergen info with your LLM request
-        # system_msg = get_reply_from_chatbot(user_msg, history, allergens)
-        system_msg = update.message.text
-    else:
-        system_msg = "Please set your allergens first using the /allergens command."
-    
-    user_sessions[user_id] = history + [(user_msg, system_msg)]
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=system_msg)
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
@@ -128,17 +105,9 @@ if __name__ == '__main__':
         )
         
         # Store the photo information in the user session
-        # if user_id not in user_sessions:
-        #     user_sessions[user_id] = []
-        
-        # In a real implementation, you would process the photo here
-        # For example, call an image recognition API to identify food items
-        # Then check against user's allergens
-        # use user_id to name the file so that each user can only upload one file at a time
         identification_outcome = identify_allergens(allergens, photo_file_bytes, Path(photo_file.file_path).name)
 
 
-        # For now, just send a placeholder response
         await context.bot.send_message(
             chat_id=user_id,
             text=identification_outcome
@@ -149,7 +118,6 @@ if __name__ == '__main__':
     start_handler = CommandHandler('start', start)
     clear_handler = CommandHandler('clear', clear)
     stop_handler = CommandHandler('stop', stop)
-    # llm_handler = MessageHandler(filters. & (~filters.COMMAND), talk_to_llm)    
     photo_handler = MessageHandler(filters.PHOTO, handle_photo)
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
 
@@ -158,7 +126,6 @@ if __name__ == '__main__':
     application.add_handler(stop_handler)
     application.add_handler(allergens_handler)
     application.add_handler(photo_handler)
-    # application.add_handler(llm_handler)
     application.add_handler(unknown_handler)
     
     application.run_polling()
