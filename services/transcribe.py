@@ -1,4 +1,4 @@
-from services.groq_client import groq_client
+from services.client import groq_client
 
 def transcribe_audio(audio_file, audio_filename):
     transcription = groq_client.audio.transcriptions.create(
