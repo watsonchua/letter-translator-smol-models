@@ -6,6 +6,8 @@ from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandl
 from dotenv import load_dotenv
 from io import BytesIO
 from services.allergen_identifier import identify_allergens
+from services.ocr import extract_content
+import json
 
 load_dotenv()
 
@@ -26,12 +28,21 @@ welcome_message = """
 I'm here to help you find out if you are allergic to the food you want to consume.
 
 Use the following commands if needed:
-/start: Start a new conversation
 /allergens: Set or update your allergen list
-/clear: Clear the chat history and continue the conversation
-/stop: End the conversation 
 """
 
+
+ocr_cache_path = Path("ocr_cache_allergen.json")
+if ocr_cache_path.exists():
+    with ocr_cache_path.open("r") as f:
+        try:
+            ocr_cache = json.load(f)
+        except json.decoder.JSONDecodeError as e:
+            print("Error reading cache", str(e))
+            ocr_cache = {}
+                    
+else:
+    ocr_cache = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
@@ -94,19 +105,31 @@ if __name__ == '__main__':
         
         # Get the photo with the highest resolution
         photo_file = await update.message.photo[-1].get_file()
+        photo_file_unique_id = photo_file.file_unique_id
+
         print(photo_file)
-        photo_file_bytes = BytesIO(await photo_file.download_as_bytearray())
+        # photo_file_bytes = BytesIO(await photo_file.download_as_bytearray())
 
         
         # Acknowledge receipt of photo
         await context.bot.send_message(
             chat_id=user_id, 
-            text="I received your photo. Let me analyze it for potential allergens."
+            text="Processing....."
         )
         
-        # Store the photo information in the user session
-        identification_outcome = identify_allergens(allergens, photo_file_bytes, Path(photo_file.file_path).name)
+        if photo_file_unique_id in ocr_cache:
+            print("Using cached OCR result")
+            ingredient_text = ocr_cache[photo_file_unique_id] 
 
+        else:
+            ingredient_text = extract_content(photo_file.file_path, prompt_list=["Extract the list of ingredients and allergens from the image."])
+            ocr_cache[photo_file_unique_id] = ingredient_text
+            with ocr_cache_path.open("w") as f:
+                json.dump(ocr_cache, f)
+
+
+        # Store the photo information in the user session
+        identification_outcome = identify_allergens(allergens, ingredient_text)
 
         await context.bot.send_message(
             chat_id=user_id,

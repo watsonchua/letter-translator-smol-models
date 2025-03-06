@@ -1,7 +1,5 @@
-from services.ocr import OCR
-from services.groq_client import groq_client
-
-
+from services.ocr import extract_content
+from services.client import groq_client
 
 system_prompt =  """
 You are an allergen detector. Given a list of ingredients and the a list of a user's allergens, find the allergens in the ingredient list and inform the user if any allergens are present. If no allergens are present, inform the user that no allergens were found.
@@ -12,7 +10,7 @@ Take note of the following:
 """
 
 user_prompt_template = """
-These are the user' allergens:
+These are the user's allergens:
 {user_allergens}
 
 
@@ -20,25 +18,14 @@ This is the ingredient list:
 {ingredient_list}
 """
 
-ingredient_reading_prompts = ["Extract the list of ingredients and allergens from the image"]
-
-
-ocr = OCR(prompts=ingredient_reading_prompts)
-
-
-
-def identify_allergens(allergen_list, ingredient_image, ingredient_filename):
-    ingredient_text = ocr.parse(ingredient_image, ingredient_filename)
-    if ingredient_text is None:
-        return "There was an error parsing the image."
-    
-
-
-    response = client.chat.completions.create(
+def identify_allergens(allergen_list, ingredient_text):
+    allergen_prompt = user_prompt_template.format(user_allergens="\n-".join(allergen_list), ingredient_list=ingredient_text)
+    print(allergen_prompt)
+    response = groq_client.chat.completions.create(
         model="gemma2-9b-it",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt_template.format(user_allergens="\n".join(allergen_list), ingredient_list=ingredient_text)},
+            {"role": "user", "content": allergen_prompt},
         ],
         temperature=0.1,
         max_completion_tokens=1024,

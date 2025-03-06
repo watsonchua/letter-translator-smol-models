@@ -1,12 +1,12 @@
 import logging
 import os
 from pathlib import Path
-from services.transcribe import transcribe_audio
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, ConversationHandler
 from dotenv import load_dotenv
 from io import BytesIO
-from services.letter_action_identifier import extract_content, identify_letter_action, respond_to_query
+from services.letter_action_identifier import identify_letter_action, respond_to_query
+from services.ocr import extract_content
 from services.translate import translate_text
 from telegram.constants import ParseMode
 from services.transcribe import transcribe_audio
@@ -14,7 +14,6 @@ import json
 
 from gtts import gTTS
 import tempfile
-import re
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN_LETTER')
@@ -101,7 +100,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     else:
         print(photo_file.file_path)
-        letter_text = extract_content(photo_file.file_path)
+        letter_text = extract_content(photo_file.file_path, prompt=["Extract the content of this letter."])
         ocr_cache[photo_file_unique_id] = letter_text
         with open("ocr_cache.json", "w") as f:
             json.dump(ocr_cache, f)
