@@ -1,7 +1,4 @@
 from services.client import groq_client, jigsaw_client
-from jigsawstack import JigsawStackError
-
-
 # user_language = "Chinese"
 
 action_extraction_system_prompt =  """
@@ -39,22 +36,6 @@ action_extraction_user_prompt_template = """
 This is the content of the letter:
 {letter_content}
 """
-
-letter_extraction_prompts = ["Extract the content of this letter."]
-
-def extract_content(url_to_filepath):
-    try:
-        ocr_response = jigsaw_client.vision.vocr({"url": url_to_filepath, "prompts" : letter_extraction_prompts})
-        letter_text = ocr_response["context"]
-    except KeyError as e:
-        print(e)
-        return None
-    except JigsawStackError as e:
-        print(f"An error occurred during uploading: {e}")
-        return None      
-
-    return letter_text
-    
 
 def identify_letter_action(letter_text):    
     model_response = groq_client.chat.completions.create(
