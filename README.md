@@ -19,13 +19,13 @@ Allergen Scanner is a Telegram bot designed to help users identify potential all
 - Jigsaw Stack API Key
 - Groq API Key
 
-Fill in .env.sample and save as .env file
+Fill in `.env.sample` and save as `.env`
 
 
 ### Using Python
 ```bash
-git clone https://github.com/watsonchua/smol-hackathon.git
-cd smol-hackathon
+git clone https://github.com/watsonchua/letter-translator-smol-models.git
+cd letter-translator-smol-models
 git checkout allergen
 python3 -m venv <path_to_your_env>
 source path_to_your_env/bin/activate
