@@ -25,8 +25,8 @@ Fill in `.env.sample` and save as `.env`
 
 ### Using Python
 ```bash
-git clone https://github.com/watsonchua/smol-hackathon.git
-cd smol-hackathon
+git clone https://github.com/watsonchua/letter-translator-smol-models.git
+cd letter-translator-smol-models
 python3 -m venv <path_to_your_env>
 source path_to_your_env/bin/activate
 pip install -r requirements.txt
