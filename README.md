@@ -1,1 +1,1 @@
-# smol-hackathon
+# Allergen Scanner
