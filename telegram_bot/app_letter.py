@@ -100,7 +100,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     else:
         print(photo_file.file_path)
-        letter_text = extract_content(photo_file.file_path, prompt=["Extract the content of this letter."])
+        letter_text = extract_content(photo_file.file_path, prompt_list=["Extract the content of this letter."])
         ocr_cache[photo_file_unique_id] = letter_text
         with open("ocr_cache.json", "w") as f:
             json.dump(ocr_cache, f)
