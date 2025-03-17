@@ -20,7 +20,7 @@ Letter Reader and Translator is a Telegram bot designed to help users who are no
 - Jigsaw Stack API Key
 - Groq API Key
 
-Fill in .env.sample and save as .env file
+Fill in `.env.sample` and save as `.env`
 
 
 ### Using Python
